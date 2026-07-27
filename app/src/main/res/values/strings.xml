@@ -1,0 +1,23 @@
+<resources>
+    <string name="app_name">TheWeather</string>
+    <string name="feels_like">%1$s° / %2$s° feels like %3$s°</string>
+    <string name="air_quality">Air quality: %1$s - %2$s</string>
+    <string name="rain">Rain</string>
+    <string name="win_speed">Wind</string>
+    <string name="visibility">Visibility</string>
+    <string name="clouds">Clouds</string>
+    <string name="humidity">Humidity</string>
+    <string name="air_pressure">Pressure</string>
+    <string name="mm_h">mm/h</string>
+    <string name="meter_second">m/s</string>
+    <string name="km">km</string>
+    <string name="ic_weather">Weather Icon</string>
+    <string name="ic_location">Location Icon</string>
+    <string name="ic_menu">Menu Icon</string>
+    <string name="ic_back">Back Icon</string>
+    <string name="ic_delete">Delete Icon</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="btn_add">Add</string>
+    <string name="manage_locations">Manage Locations</string>
+    <string name="search_location">Search location</string>
+</resources>
