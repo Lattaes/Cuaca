@@ -42,7 +42,6 @@ private data class ConditionUiItem(
 @Composable
 fun WeatherCondition(
     weatherCurrent: WeatherCurrent,
-    cardColor: Color,
     modifier: Modifier = Modifier
 ) {
     val items = listOf(
@@ -87,7 +86,6 @@ fun WeatherCondition(
                         label = item.label,
                         value = item.value,
                         unit = item.unit,
-                        cardColor = cardColor,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -102,12 +100,11 @@ fun CardWeatherCondition(
     label: String,
     value: String,
     unit: String,
-    cardColor: Color,
     modifier: Modifier = Modifier
 ) {
     Card(
         colors = CardDefaults.cardColors(
-            containerColor = cardColor.copy(0.2f),
+            containerColor = MaterialTheme.colorScheme.surface.copy(0.2f),
             contentColor = WeatherTextSecondary
         ),
         modifier = modifier

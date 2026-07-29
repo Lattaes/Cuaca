@@ -53,6 +53,7 @@ interface WeatherApiService {
     @GET("geo/1.0/direct")
     suspend fun getLocationName(
         @Query("q") location: String,
+        @Query("limit") limit: Int = 10,
         @Query("appid") apiKey: String
     ): List<LocationResponse>
 }

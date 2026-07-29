@@ -20,4 +20,6 @@
     <string name="btn_add">Add</string>
     <string name="manage_locations">Manage Locations</string>
     <string name="search_location">Search location</string>
+    <string name="weather_detail_title">Weather Detail</string>
+    <string name="weather_search_title">Weather Search</string>
 </resources>

@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.lattae.theweather.R
 import com.lattae.theweather.common.Resource
 import com.lattae.theweather.domain.model.AirPollution
 import com.lattae.theweather.domain.model.Weather
@@ -44,14 +45,18 @@ import com.lattae.theweather.presentation.ui.detail.contents.WeatherDailyContent
 import com.lattae.theweather.presentation.ui.detail.contents.WeatherHeader
 import com.lattae.theweather.presentation.ui.detail.viewmodel.DetailEvent
 import com.lattae.theweather.presentation.ui.detail.viewmodel.DetailViewModel
+import com.lattae.theweather.presentation.ui.navigation.NavigationDestination
 
+object DetailDestination : NavigationDestination {
+    override val route = "detail"
+    override val titleRes = R.string.weather_detail_title
+}
 
 @Composable
 fun DetailScreen(
     windowSizeClass: WindowWidthSizeClass,
     onNavigateToSearchScreen: () -> Unit,
     themeColor: Brush,
-    elementColor: Color,
     viewModel: DetailViewModel
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -96,14 +101,12 @@ fun DetailScreen(
                         WeatherDetailPortrait(
                             weather = weatherData,
                             detailEvent = defaultEvent,
-                            color = elementColor
                         )
                     }
                     WindowWidthSizeClass.Medium -> {
                         WeatherDetailPortrait(
                             weather = weatherData,
                             detailEvent = defaultEvent,
-                            color = elementColor
                         )
                     }
 
@@ -111,14 +114,12 @@ fun DetailScreen(
                         WeatherDetailLandscape(
                             weather = weatherData,
                             detailEvent = defaultEvent,
-                            color = elementColor
                         )
                     }
                     else -> {
                         WeatherDetailPortrait(
                             weather = weatherData,
-                            detailEvent = defaultEvent,
-                            color = elementColor
+                            detailEvent = defaultEvent
                         )
                     }
                 }
@@ -138,7 +139,6 @@ fun DetailScreen(
 fun WeatherDetailPortrait(
     weather: Weather,
     detailEvent: DetailEvent,
-    color: Color,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -150,8 +150,7 @@ fun WeatherDetailPortrait(
     ) {
         WeatherHeader(
             location = weather.weatherCurrent?.locationName ?: "",
-            detailEvent = detailEvent,
-            buttonColor = color
+            detailEvent = detailEvent
         )
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
@@ -166,13 +165,11 @@ fun WeatherDetailPortrait(
             item {
                 WeatherDailyContent(
                     weatherDaily = weather.weatherDaily ?: emptyList(),
-                    backgroundColor = color
                 )
             }
             item {
                 WeatherCondition(
-                    weatherCurrent = weather.weatherCurrent ?: WeatherCurrent(),
-                    cardColor = color
+                    weatherCurrent = weather.weatherCurrent ?: WeatherCurrent()
                 )
             }
         }
@@ -183,7 +180,6 @@ fun WeatherDetailPortrait(
 fun WeatherDetailLandscape(
     weather: Weather,
     detailEvent: DetailEvent,
-    color: Color,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -200,7 +196,6 @@ fun WeatherDetailLandscape(
             WeatherHeader(
                 location = weather.weatherCurrent?.locationName ?: "",
                 detailEvent = detailEvent,
-                buttonColor = color
             )
             WeatherCurrentContent(
                 weatherCurrent = weather.weatherCurrent ?: WeatherCurrent(),
@@ -215,14 +210,12 @@ fun WeatherDetailLandscape(
             ) {
                 WeatherDailyContent(
                     weatherDaily = weather.weatherDaily ?: emptyList(),
-                    backgroundColor = color,
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
                 )
                 WeatherCondition(
                     weatherCurrent = weather.weatherCurrent ?: WeatherCurrent(),
-                    cardColor = color,
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()

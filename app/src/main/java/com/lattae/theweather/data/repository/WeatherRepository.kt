@@ -53,7 +53,7 @@ class WeatherRepository @Inject constructor(
 
     override suspend fun getSearchLocation(name: String): Resource<List<Location>> {
         return try {
-            val searchedLocation = apiService.getLocationName(name, apiKey)
+            val searchedLocation = apiService.getLocationName(name, limit = 10, apiKey)
 
             Resource.Success(searchedLocation.toLocation())
         } catch (e: Exception) {

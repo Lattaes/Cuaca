@@ -52,7 +52,7 @@ fun SavedLocationItem(
     Box(modifier = modifier.animateContentSize()) {
         SwipeToDismissBox(
             state = swipeToDeleteState,
-            enableDismissFromEndToStart = true,
+            enableDismissFromEndToStart = !isCurrentLocation,
             enableDismissFromStartToEnd = false,
             backgroundContent = {
                 val isSwiping = swipeToDeleteState.targetValue == SwipeToDismissBoxValue.EndToStart

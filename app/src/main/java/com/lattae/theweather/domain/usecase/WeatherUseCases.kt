@@ -3,6 +3,7 @@ package com.lattae.theweather.domain.usecase
 import com.lattae.theweather.common.Resource
 import com.lattae.theweather.data.repository.WeatherRepository
 import com.lattae.theweather.domain.model.AirPollution
+import com.lattae.theweather.domain.model.Location
 import com.lattae.theweather.domain.model.WeatherCurrent
 import com.lattae.theweather.domain.model.WeatherDaily
 import javax.inject.Inject
@@ -28,5 +29,13 @@ class GetAirPollutionUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(lat: Double, lon: Double): Resource<AirPollution> {
         return weatherRepository.getAirPollution(lat, lon)
+    }
+}
+
+class GetSearchLocation @Inject constructor(
+    private val weatherRepository: WeatherRepository
+) {
+    suspend operator fun invoke(locationName: String): Resource<List<Location>> {
+        return weatherRepository.getSearchLocation(locationName)
     }
 }

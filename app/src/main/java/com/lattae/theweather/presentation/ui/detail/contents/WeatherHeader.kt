@@ -35,7 +35,6 @@ import com.lattae.theweather.presentation.ui.detail.viewmodel.DetailEvent
 fun WeatherHeader(
     location: String,
     detailEvent: DetailEvent,
-    buttonColor: Color,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxWidth())
@@ -56,7 +55,6 @@ fun WeatherHeader(
                         location = location,
                         onBackClick = state.onBackClick,
                         onAddClick = state.onAddClick,
-                        buttonColor = buttonColor
                     )
                 }
             }
@@ -98,8 +96,7 @@ fun HeaderDefaultContent(
 fun HeaderSearchResultContent(
     location: String,
     onBackClick: () -> Unit,
-    onAddClick: () -> Unit,
-    buttonColor: Color
+    onAddClick: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -125,7 +122,7 @@ fun HeaderSearchResultContent(
         Button(
             onClick = onAddClick,
             colors = ButtonDefaults.buttonColors(
-                containerColor = buttonColor.copy(0.2f),
+                containerColor = MaterialTheme.colorScheme.surface.copy(0.2f),
                 contentColor = WeatherTextSecondary
             )
         ) {

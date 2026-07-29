@@ -44,7 +44,7 @@ class DetailViewModel @Inject constructor(
         loadDetailWeather()
     }
 
-    fun loadDetailWeather() {
+    private fun loadDetailWeather() {
         viewModelScope.launch {
             _uiState.update { it.copy(state = Resource.Loading) }
 
@@ -75,12 +75,17 @@ class DetailViewModel @Inject constructor(
                     airPollutionResult is Resource.Success
                     ) {
                         val geocoder = Geocoder(context, Locale.getDefault())
-                        val address = getLocationAddress(geocoder, location.latitude, location.longitude)
-                        val locationAddress = address.subLocality
-                                            ?: address.locality
-                                            ?: address.adminArea
-                                            ?: address.countryName
-                                            ?: (currentWeatherResult.data.locationName)
+                        val address = try {
+                            getLocationAddress(geocoder, location.latitude, location.longitude)
+                        } catch (e: Exception) {
+                            null
+                        }
+                        val locationAddress = address?.let {
+                            it.subLocality
+                                ?: it.locality
+                                ?: it.adminArea
+                                ?: it.countryName
+                        } ?: currentWeatherResult.data.locationName
 
                         val weather = Weather(
                             currentWeatherResult.data,
@@ -105,23 +110,27 @@ class DetailViewModel @Inject constructor(
     }
 
     @Suppress("DEPRECATION")
-    private suspend fun getLocationAddress(geocoder: Geocoder, lat: Double, lon: Double): Address {
-        return suspendCancellableCoroutine {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                geocoder.getFromLocation(lat, lon, 1) { address ->
-                    if (address.isNotEmpty()) {
-                        it.resume(address[0])
+    private suspend fun getLocationAddress(geocoder: Geocoder, lat: Double, lon: Double): Address? {
+        return suspendCancellableCoroutine { continuation ->
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    geocoder.getFromLocation(lat, lon, 1) { address ->
+                        if (address.isNotEmpty()) {
+                            continuation.resume(address[0])
+                        } else {
+                            continuation.resume(null)
+                        }
+                    }
+                } else {
+                    val address = geocoder.getFromLocation(lat, lon, 1)
+                    if (!address.isNullOrEmpty()) {
+                        continuation.resume(address[0])
                     } else {
-                        it.resumeWithException(Exception("Address not found"))
+                        continuation.resume(null)
                     }
                 }
-            } else {
-                val address = geocoder.getFromLocation(lat, lon, 1)
-                if (!address.isNullOrEmpty()) {
-                    it.resume(address[0])
-                } else {
-                    it.resumeWithException(Exception("Address not found"))
-                }
+            } catch (e: Exception) {
+                continuation.resume(null)
             }
         }
     }

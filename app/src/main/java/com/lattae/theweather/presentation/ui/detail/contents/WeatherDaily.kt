@@ -28,14 +28,13 @@ import java.time.LocalDate
 @Composable
 fun WeatherDailyContent(
     weatherDaily: List<WeatherDaily>,
-    backgroundColor: Color,
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(backgroundColor.copy(0.2f))
+            .background(MaterialTheme.colorScheme.surface.copy(0.2f))
             .padding(12.dp, 8.dp),
         verticalArrangement = Arrangement.Center
     ) {
@@ -79,7 +78,6 @@ fun WeatherDailyComponentPreview() {
     ) {
         WeatherDailyContent(
             weatherDaily = weatherDaily,
-            backgroundColor = Color.Gray,
         )
     }
 }

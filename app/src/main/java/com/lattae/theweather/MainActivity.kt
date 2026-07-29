@@ -22,9 +22,9 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.lattae.theweather.common.Resource
-import com.lattae.theweather.presentation.navigation.WeatherNavGraph
 import com.lattae.theweather.presentation.theme.TheWeatherTheme
 import com.lattae.theweather.presentation.ui.detail.viewmodel.DetailViewModel
+import com.lattae.theweather.presentation.ui.navigation.WeatherNavGraph
 import com.lattae.theweather.util.WeatherType
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -76,7 +76,7 @@ class MainActivity : ComponentActivity() {
 
                     WeatherNavGraph(
                         windowSizeClass = windowSize.widthSizeClass,
-                        themeColor = gradientBackground,
+                        theme = gradientBackground,
                         detailViewModel = viewModel
                     )
                 }

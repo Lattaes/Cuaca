@@ -9,7 +9,8 @@ fun List<LocationResponse>.toLocation(): List<Location> {
             locationName = it.name,
             lat = it.lat,
             lon = it.lon,
-            country = it.country
+            country = it.country,
+            state = it.state
         )
     }
 }
