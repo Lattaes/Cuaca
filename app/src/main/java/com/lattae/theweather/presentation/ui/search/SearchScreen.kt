@@ -1,8 +1,10 @@
 package com.lattae.theweather.presentation.ui.search
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -26,10 +29,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Devices.PIXEL_7
 import androidx.compose.ui.tooling.preview.Preview
@@ -54,20 +60,19 @@ object SearchDestination : NavigationDestination {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen(
-    state: SearchState,
+    searchState: SearchState,
     onEvent: (SearchEvent) -> Unit,
     currentLocation: WeatherCurrent,
-    savedLocation: List<WeatherCurrent>,
     theme: Brush,
     onNavigateBack: () -> Unit,
-    onDeleteLocation: (WeatherCurrent) -> Unit
+    onNavigateToDetail: (Double, Double) -> Unit
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     var isSearchActive by rememberSaveable { mutableStateOf(false) }
 
-    val searchResult = remember(state.searchLocation) {
-        if (state.searchLocation is Resource.Success) {
-            state.searchLocation.data
+    val searchResult = remember(searchState.searchLocation) {
+        if (searchState.searchLocation is Resource.Success) {
+            searchState.searchLocation.data
         } else {
             emptyList()
         }
@@ -114,47 +119,84 @@ fun SearchScreen(
                 .padding(top = topPadding)
                 .background(theme)
         ) {
-            CustomSearchBar(
-                query = state.searchQuery,
-                onQueryChange = {newQuery ->
-                    onEvent(SearchEvent.OnQueryChange(newQuery))
-                },
-                onSearch = {},
-                searchResult = searchResult,
-                expanded = isSearchActive,
-                onExpandedChange = { isSearchActive = it },
-                expandedColor = theme
-            )
-
-            if (!isSearchActive) {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-
-                    item (
-                        key = "current_location_${currentLocation.locationName}"
-                    ){
-                        SavedLocationItem(
-                            location = currentLocation,
-                            isCurrentLocation = true,
-                            onDeleteLocation = {}
-                        )
+            when (val savedLocations = searchState.savedLocations) {
+                is Resource.Loading -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.background),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.onBackground)
                     }
+                }
+                is Resource.Success -> {
+                    CustomSearchBar(
+                        query = searchState.searchQuery,
+                        onQueryChange = {newQuery ->
+                            onEvent(SearchEvent.OnQueryChange(newQuery))
+                        },
+                        onSearch = {},
+                        searchResult = searchResult,
+                        expanded = isSearchActive,
+                        onExpandedChange = { isSearchActive = it },
+                        expandedColor = theme,
+                        onItemClick = { location ->
+                            onEvent(SearchEvent.OnLocationClick(location))
+                            isSearchActive = false
+                            onNavigateToDetail(location.lat, location.lon)
+                        }
+                    )
 
-                    items(
-                        items = savedLocation,
-                        key = { location -> location.locationName ?: "" }
-                    ) { location ->
-                        SavedLocationItem(
-                            location = location,
-                            isCurrentLocation = false,
-                            onDeleteLocation = onDeleteLocation
-                        )
+                    if (!isSearchActive) {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            item (
+                                key = "current_location_${currentLocation.locationName}"
+                            ){
+                                SavedLocationItem(
+                                    location = currentLocation,
+                                    isCurrentLocation = true,
+                                    onItemClick = { location ->
+                                        onNavigateToDetail(location.lat, location.lon)
+                                    },
+                                    onDeleteLocation = {}
+                                )
+                            }
+
+                            items(
+                                items = savedLocations.data,
+                                key = { pair ->
+                                    pair.first.locationName ?: "${pair.first.lat}${pair.first.lon}"
+                                }
+                            ) { pair ->
+                                val domainLocation = pair.first
+                                val weather = pair.second
+                                SavedLocationItem(
+                                    location = weather,
+                                    isCurrentLocation = false,
+                                    onItemClick = { location ->
+                                        onNavigateToDetail(location.lat, location.lon)
+                                    },
+                                    onDeleteLocation = {
+                                        onEvent(SearchEvent.OnDeleteLocation(domainLocation.lat, domainLocation.lon))
+                                    }
+                                )
+                            }
+                        }
                     }
+                }
+                is Resource.Failure -> {
+                    Toast.makeText(
+                        LocalContext.current,
+                        savedLocations.errorMessage,
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
@@ -162,36 +204,19 @@ fun SearchScreen(
 }
 
 
-@Preview (showBackground = true, showSystemUi = true, device = PIXEL_7)
-@Composable
-fun SearchScreenPreview() {
-    var locationList by remember {
-        mutableStateOf(
-            listOf(
-                WeatherCurrent(locationName = "Seoul", icon = "01d", tempMin = 15, tempMax = 25),
-                WeatherCurrent(locationName = "Hangzhou", icon = "02d", tempMin = 18, tempMax = 28),
-                WeatherCurrent(locationName = "Beijing", icon = "", tempMin = 25, tempMax = 28
-                ),
-                WeatherCurrent(locationName = "Chongqing", icon = "", tempMin = 25, tempMax = 28
-                ),
-            )
-        )
-    }
-    SearchScreen(
-        state = SearchState(),
-        onEvent = {},
-        onNavigateBack = {},
-        currentLocation = WeatherCurrent(
-            locationName = "Fuzhou",
-            icon = "",
-            tempMin = 25,
-            tempMax = 28
-        ),
-        savedLocation = locationList,
-        theme = Brush.verticalGradient(),
-        onDeleteLocation = { location ->
-//            locationList = locationList.filterNot { it.locationName == location.locationName }
-
-        }
-    )
-}
+//@Preview (showBackground = true, showSystemUi = true, device = PIXEL_7)
+//@Composable
+//fun SearchScreenPreview() {
+//    SearchScreen(
+//        searchState = SearchState(),
+//        onEvent = {},
+//        onNavigateBack = {},
+//        currentLocation = WeatherCurrent(
+//            locationName = "Fuzhou",
+//            icon = "",
+//            tempMin = 25,
+//            tempMax = 28
+//        ),
+//        theme = Brush.verticalGradient()
+//    )
+//}

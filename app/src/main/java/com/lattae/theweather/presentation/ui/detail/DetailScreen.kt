@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -86,40 +87,54 @@ fun DetailScreen(
             .background(themeColor),
         contentAlignment = Alignment.Center
     ) {
-        when (val weatherState = uiState.state) {
+        when (val weatherState = uiState.detailState) {
             is Resource.Loading -> {
-                CircularProgressIndicator(color = WeatherTextSecondary)
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.onBackground)
+                }
             }
             is Resource.Success -> {
                 val weatherData = weatherState.data
-                val defaultEvent = DetailEvent.HeaderDefault(
-                    onMenuClick = onNavigateToSearchScreen
-                )
+                val detailEvent = if (uiState.isCurrentLocation) {
+                    DetailEvent.HeaderDefault(
+                        onMenuClick = onNavigateToSearchScreen
+                    )
+                } else {
+                    DetailEvent.HeaderSearchResult(
+                        onBackClick = { viewModel.loadDetailWeather() },
+                        onAddClick = { viewModel.saveLocation() }
+                    )
+                }
 
                 when (windowSizeClass) {
                     WindowWidthSizeClass.Compact -> {
                         WeatherDetailPortrait(
                             weather = weatherData,
-                            detailEvent = defaultEvent,
+                            detailEvent = detailEvent,
                         )
                     }
                     WindowWidthSizeClass.Medium -> {
                         WeatherDetailPortrait(
                             weather = weatherData,
-                            detailEvent = defaultEvent,
+                            detailEvent = detailEvent,
                         )
                     }
 
                     WindowWidthSizeClass.Expanded -> {
                         WeatherDetailLandscape(
                             weather = weatherData,
-                            detailEvent = defaultEvent,
+                            detailEvent = detailEvent,
                         )
                     }
                     else -> {
                         WeatherDetailPortrait(
                             weather = weatherData,
-                            detailEvent = defaultEvent
+                            detailEvent = detailEvent
                         )
                     }
                 }

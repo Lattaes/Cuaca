@@ -5,5 +5,6 @@ import com.lattae.theweather.domain.model.Weather
 
 data class DetailState (
     val hasLocationPermission: Boolean = false,
-    val state: Resource<Weather> = Resource.Loading
+    val detailState: Resource<Weather> = Resource.Loading,
+    val isCurrentLocation: Boolean = true
 )

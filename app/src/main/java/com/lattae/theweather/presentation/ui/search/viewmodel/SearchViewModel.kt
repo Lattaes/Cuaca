@@ -3,7 +3,9 @@ package com.lattae.theweather.presentation.ui.search.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lattae.theweather.common.Resource
-import com.lattae.theweather.domain.usecase.GetSearchLocation
+import com.lattae.theweather.domain.usecase.DeleteLocationUseCase
+import com.lattae.theweather.domain.usecase.GetSavedLocationsUseCase
+import com.lattae.theweather.domain.usecase.GetSearchLocationUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +21,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
-    private val getSearchLocation: GetSearchLocation
+    private val getSavedLocationsUseCase: GetSavedLocationsUseCase,
+    private val getSearchLocationUseCase: GetSearchLocationUseCase,
+    private val deleteLocationUseCase: DeleteLocationUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SearchState())
@@ -27,6 +31,7 @@ class SearchViewModel @Inject constructor(
 
     init {
         observeSearchQuery()
+        getSavedLocations()
     }
 
     fun onEvent(event: SearchEvent) {
@@ -35,8 +40,31 @@ class SearchViewModel @Inject constructor(
                 _uiState.update { it.copy(searchQuery = event.newQuery) }
             }
 
+            is SearchEvent.OnDeleteLocation -> {
+                viewModelScope.launch {
+                    deleteLocationUseCase(event.lat, event.lon)
+                }
+            }
+
+            is SearchEvent.OnLocationClick -> {
+                _uiState.update {
+                    it.copy(
+                        searchQuery = "",
+                        searchLocation = Resource.Success(emptyList())
+                    )
+                }
+            }
+
             SearchEvent.OnClearQuery -> {
                 _uiState.update { it.copy(searchQuery = "") }
+            }
+        }
+    }
+
+    private fun getSavedLocations() {
+        viewModelScope.launch {
+            getSavedLocationsUseCase().collect { result ->
+                _uiState.update { it.copy(savedLocations = result) }
             }
         }
     }
@@ -60,7 +88,7 @@ class SearchViewModel @Inject constructor(
     private suspend fun getSearch(query: String) {
         _uiState.update { it.copy(searchLocation = Resource.Loading) }
 
-        val searchResult = getSearchLocation(query)
+        val searchResult = getSearchLocationUseCase(query)
         _uiState.update { it.copy(searchLocation = searchResult) }
     }
 }

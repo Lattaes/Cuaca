@@ -14,6 +14,8 @@ import kotlin.math.abs
 fun WeatherCurrentResponse.toWeatherCurrent(): WeatherCurrent {
     return WeatherCurrent(
         locationName = this.name,
+        lat = this.coord.lat,
+        lon = this.coord.lon,
         datetime = LocalDate.now(),
         weatherType = this.weather.firstOrNull()?.main,
         icon = this.weather.firstOrNull()?.icon,

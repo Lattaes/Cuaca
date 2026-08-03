@@ -47,20 +47,22 @@ fun WeatherNavGraph(
         composable(route = SearchDestination.route) {
             val searchViewModel: SearchViewModel = hiltViewModel()
             val searchState by searchViewModel.uiState.collectAsStateWithLifecycle()
-            val detailViewModel by detailViewModel.uiState.collectAsStateWithLifecycle()
+            val detailState by detailViewModel.uiState.collectAsStateWithLifecycle()
 
-            val currentLocation = when (val weather = detailViewModel.state) {
+            val currentLocation = when (val weather = detailState.detailState) {
                 is Resource.Success -> weather.data.weatherCurrent ?: WeatherCurrent()
                 else -> WeatherCurrent()
             }
             SearchScreen(
-                state = searchState,
+                searchState = searchState,
                 onEvent = searchViewModel::onEvent,
                 currentLocation = currentLocation,
-                savedLocation = emptyList(),
                 theme = theme,
                 onNavigateBack = { navController.popBackStack() },
-                onDeleteLocation = {}
+                onNavigateToDetail = { lat, lon ->
+                    detailViewModel.loadDetailWeather(lat, lon)
+                    navController.popBackStack()
+                }
             )
         }
     }

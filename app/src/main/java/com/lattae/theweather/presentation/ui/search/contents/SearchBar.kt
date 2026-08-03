@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -31,6 +32,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.lattae.theweather.R
 import com.lattae.theweather.domain.model.Location
@@ -44,6 +46,7 @@ fun CustomSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
     onSearch: (String) -> Unit,
+    onItemClick: (Location) -> Unit,
     searchResult: List<Location>,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
@@ -117,8 +120,7 @@ fun CustomSearchBar(
             onExpandedChange = onExpandedChange
         ){
             LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(16.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
                 items(searchResult) { location ->
                     ListItem(
@@ -127,22 +129,21 @@ fun CustomSearchBar(
                         ),
                         headlineContent = {
                             Text(
-                                text = location.locationName ?: "",
+                                text = "${location.locationName}",
                                 color = WeatherTextPrimary
                             )
                         },
                         supportingContent = {
-                            val info = listOfNotNull(location.state, location.country).joinToString(", ")
                             Text(
-                                text = info,
-                                color = WeatherTextSecondary
+                                text = "${location.state}, ${location.country}",
+                                color = WeatherTextPrimary
                             )
                         },
                         leadingContent = {
                             Icon(
-                                imageVector = Icons.Default.LocationOn,
-                                contentDescription = null,
-                                tint = WeatherTextSecondary
+                                imageVector = Icons.Rounded.LocationOn,
+                                contentDescription = stringResource(R.string.ic_location),
+                                tint = MaterialTheme.colorScheme.onPrimary.copy(0.5f)
                             )
                         },
                         modifier = Modifier
@@ -150,10 +151,11 @@ fun CustomSearchBar(
                                 location.locationName?.let { onQueryChange(it) }
                                 onExpandedChange(false)
                                 onSearch(location.locationName ?: "")
+                                onItemClick(location)
                             }
                             .fillMaxWidth()
                     )
-                    HorizontalDivider(color = WeatherCardBg.copy(alpha = 0.5f))
+                    HorizontalDivider(color = WeatherCardBg.copy(alpha = 0.3f))
                 }
             }
         }

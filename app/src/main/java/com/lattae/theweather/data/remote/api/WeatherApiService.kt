@@ -1,7 +1,7 @@
 package com.lattae.theweather.data.remote.api
 
 import com.lattae.weatherapp.data.remote.dto.AirPollutionResponse
-import com.lattae.weatherapp.data.remote.dto.LocationResponse
+import com.lattae.theweather.data.remote.dto.LocationResponse
 import com.lattae.weatherapp.data.remote.dto.WeatherCurrentResponse
 import com.lattae.weatherapp.data.remote.dto.WeatherDailyResponse
 import retrofit2.http.GET
@@ -53,7 +53,7 @@ interface WeatherApiService {
     @GET("geo/1.0/direct")
     suspend fun getLocationName(
         @Query("q") location: String,
-        @Query("limit") limit: Int = 10,
-        @Query("appid") apiKey: String
+        @Query("appid") apiKey: String,
+        @Query("limit") limit: Int = 15
     ): List<LocationResponse>
 }

@@ -4,6 +4,8 @@ import java.time.LocalDate
 
 data class WeatherCurrent(
     val locationName: String? = null,
+    val lat: Double = 0.0,
+    val lon: Double = 0.0,
     val datetime: LocalDate = LocalDate.now(),
     val weatherType: String? = null,
     val icon: String? = null,

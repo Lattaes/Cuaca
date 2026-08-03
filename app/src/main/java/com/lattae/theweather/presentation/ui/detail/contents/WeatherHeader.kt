@@ -101,7 +101,7 @@ fun HeaderSearchResultContent(
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.Bottom
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -122,7 +122,7 @@ fun HeaderSearchResultContent(
         Button(
             onClick = onAddClick,
             colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.surface.copy(0.2f),
+                containerColor = MaterialTheme.colorScheme.surface.copy(0.3f),
                 contentColor = WeatherTextSecondary
             )
         ) {
@@ -149,7 +149,7 @@ fun LocationTitle(
             imageVector = Icons.Filled.LocationOn,
             contentDescription = stringResource(R.string.ic_location),
             tint = WeatherTextSecondary,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(20.dp)
         )
         Text(
             text = location,

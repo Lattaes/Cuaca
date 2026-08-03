@@ -1,4 +1,4 @@
-package com.lattae.weatherapp.data.remote.dto
+package com.lattae.theweather.data.remote.dto
 
 import com.google.gson.annotations.SerializedName
 

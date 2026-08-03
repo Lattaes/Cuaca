@@ -39,7 +39,7 @@ class MainActivity : ComponentActivity() {
             val viewModel: DetailViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-            val weatherTheme = when (val state = uiState.state) {
+            val weatherTheme = when (val state = uiState.detailState) {
                 is Resource.Success -> {
                     val weather = state.data.weatherCurrent?.weatherType.toString()
                     WeatherType.from(weather)

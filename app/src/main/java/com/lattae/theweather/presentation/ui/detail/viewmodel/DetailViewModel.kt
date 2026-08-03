@@ -9,8 +9,10 @@ import androidx.lifecycle.viewModelScope
 import com.lattae.theweather.common.Resource
 import com.lattae.theweather.data.mapper.toWeather
 import com.lattae.theweather.domain.location.ILocationManager
+import com.lattae.theweather.domain.model.Location
 import com.lattae.theweather.domain.model.Weather
 import com.lattae.theweather.domain.usecase.GetAirPollutionUseCase
+import com.lattae.theweather.domain.usecase.SaveLocationUseCase
 import com.lattae.theweather.domain.usecase.GetCurrentWeatherUseCase
 import com.lattae.theweather.domain.usecase.GetDailyForecastWeatherUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,7 +36,8 @@ class DetailViewModel @Inject constructor(
     private val locationManager: ILocationManager,
     private val getCurrentWeatherUseCase: GetCurrentWeatherUseCase,
     private val getDailyForecastWeatherUseCase: GetDailyForecastWeatherUseCase,
-    private val getAirPollutionUseCase: GetAirPollutionUseCase
+    private val getAirPollutionUseCase: GetAirPollutionUseCase,
+    private val saveLocationUseCase: SaveLocationUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(DetailState())
     val uiState: StateFlow<DetailState> = _uiState.asStateFlow()
@@ -44,26 +47,39 @@ class DetailViewModel @Inject constructor(
         loadDetailWeather()
     }
 
-    private fun loadDetailWeather() {
+    fun loadDetailWeather(latitude: Double? = null, longitude: Double? = null) {
         viewModelScope.launch {
-            _uiState.update { it.copy(state = Resource.Loading) }
+            _uiState.update { it.copy(
+                detailState = Resource.Loading,
+                isCurrentLocation = latitude == null && longitude == null
+            ) }
 
-            val location = locationManager.getCurrentLocation() ?: run {
-                _uiState.update { it.copy(state = Resource.Failure("Failed to load location")) }
-                return@launch
+            val lat: Double
+            val lon: Double
+
+            if (latitude != null && longitude != null) {
+                lat = latitude
+                lon = longitude
+            } else {
+                val location = locationManager.getCurrentLocation() ?: run {
+                    _uiState.update { it.copy(detailState = Resource.Failure("Failed to load location")) }
+                    return@launch
+                }
+                lat = location.latitude
+                lon = location.longitude
             }
 
             coroutineScope {
                 val currentWeather = async {
-                    getCurrentWeatherUseCase(location.latitude, location.longitude)
+                    getCurrentWeatherUseCase(lat, lon)
                 }
 
                 val dailyForecastWeather = async {
-                    getDailyForecastWeatherUseCase(location.latitude, location.longitude)
+                    getDailyForecastWeatherUseCase(lat, lon)
                 }
 
                 val airPollution = async {
-                    getAirPollutionUseCase(location.latitude, location.longitude)
+                    getAirPollutionUseCase(lat, lon)
                 }
 
                 val currentWeatherResult = currentWeather.await()
@@ -76,16 +92,24 @@ class DetailViewModel @Inject constructor(
                     ) {
                         val geocoder = Geocoder(context, Locale.getDefault())
                         val address = try {
-                            getLocationAddress(geocoder, location.latitude, location.longitude)
+                            getLocationAddress(geocoder, lat, lon)
                         } catch (e: Exception) {
                             null
                         }
-                        val locationAddress = address?.let {
-                            it.subLocality
-                                ?: it.locality
-                                ?: it.adminArea
-                                ?: it.countryName
-                        } ?: currentWeatherResult.data.locationName
+
+                        val locationAddress = if (_uiState.value.isCurrentLocation) {
+                            address?.let {
+                                it.subLocality ?:
+                                it.locality ?:
+                                it.adminArea ?:
+                                it.countryName
+                            } ?: currentWeatherResult.data.locationName
+                        } else {
+                            address.let {
+                                it?.locality ?:
+                                it?.adminArea
+                            } ?: currentWeatherResult.data.locationName
+                        }
 
                         val weather = Weather(
                             currentWeatherResult.data,
@@ -97,14 +121,31 @@ class DetailViewModel @Inject constructor(
                                     locationName = locationAddress
                                 )
                             )
-                    _uiState.update { it.copy(state = Resource.Success(weather)) }
+                    _uiState.update { it.copy(detailState = Resource.Success(weather)) }
                 } else {
                     val error = (currentWeatherResult as? Resource.Failure)?.error
                         ?: (dailyForecastWeatherResult as? Resource.Failure)?.error
                         ?: (airPollutionResult as? Resource.Failure)?.error
 
-                    _uiState.update { it.copy(state = Resource.Failure(error.toString())) }
+                    _uiState.update { it.copy(detailState = Resource.Failure(error.toString())) }
                 }
+            }
+        }
+    }
+
+    fun saveLocation() {
+        viewModelScope.launch {
+            val state = _uiState.value.detailState
+            if (state is Resource.Success) {
+                val weather = state.data
+                val location = Location(
+                    locationName = weather.weatherCurrent?.locationName,
+                    lat = weather.weatherCurrent?.lat ?: 0.0,
+                    lon = weather.weatherCurrent?.lon ?: 0.0,
+                    country = null,
+                    state = null
+                )
+                saveLocationUseCase(location)
             }
         }
     }

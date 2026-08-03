@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -48,7 +49,7 @@ fun WeatherInfo(
         ) {
             if (isCurrentLocation) {
                 Icon(
-                    imageVector = Icons.Filled.LocationOn,
+                    imageVector = Icons.Rounded.LocationOn,
                     contentDescription = stringResource(R.string.ic_location),
                     tint = MaterialTheme.colorScheme.onPrimary.copy(0.45f),
                     modifier = Modifier
