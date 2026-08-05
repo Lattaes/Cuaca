@@ -49,8 +49,8 @@ fun WeatherNavGraph(
             val searchState by searchViewModel.uiState.collectAsStateWithLifecycle()
             val detailState by detailViewModel.uiState.collectAsStateWithLifecycle()
 
-            val currentLocation = when (val weather = detailState.detailState) {
-                is Resource.Success -> weather.data.weatherCurrent ?: WeatherCurrent()
+            val currentLocation = when (val weather = detailState.currentLocationWeather) {
+                is Resource.Success -> weather.data
                 else -> WeatherCurrent()
             }
             SearchScreen(

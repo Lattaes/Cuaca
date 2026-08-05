@@ -1,9 +1,11 @@
 package com.lattae.theweather.presentation.ui.detail.viewmodel
 
+import android.R
 import android.content.Context
 import android.location.Address
 import android.location.Geocoder
 import android.os.Build
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.lattae.theweather.common.Resource
@@ -36,6 +38,7 @@ import java.util.Locale
 import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlin.math.abs
 
 @HiltViewModel
 class DetailViewModel @Inject constructor(
@@ -85,10 +88,13 @@ class DetailViewModel @Inject constructor(
 
                     if (result is Resource.Success) {
                         result.data.any { (location, _) ->
-                            location.lat == lat && location.lon == lon
+                            val threshold = 0.0001
+                            abs(location.lat - lat) < threshold &&
+                            abs(location.lon - lon) < threshold
                         }
                     } else false
                 }
+
                 val currentWeather = async {
                     getCurrentWeatherUseCase(lat, lon)
                 }
@@ -138,13 +144,25 @@ class DetailViewModel @Inject constructor(
                             )
                         )
 
-                    val currentLoc = (weather.weatherCurrent?.lat == lat && weather.weatherCurrent.lon == lon)
                     _uiState.update {
+                        val updatedCurrentWeather = if (isCurrentLocation) {
+                            Resource.Success(
+                                currentWeatherResult.data.copy(
+                                    locationName = locationAddress
+                                )
+                            )
+                        } else {
+                            it.currentLocationWeather
+                        }
                         it.copy(
                             detailState = Resource.Success(weather),
+                            currentLocationWeather = updatedCurrentWeather,
+                            isCurrentLocation = isCurrentLocation,
                             isSavedLocation = isSavedLocation
                         )
                     }
+                    Log.d("Current Location:", isCurrentLocation.toString())
+                    Log.d("Saved Location:", isSavedLocation.toString())
                 } else {
                     val error = (currentWeatherResult as? Resource.Failure)?.error
                         ?: (dailyForecastWeatherResult as? Resource.Failure)?.error
