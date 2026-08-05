@@ -15,16 +15,23 @@ import com.lattae.theweather.domain.usecase.GetAirPollutionUseCase
 import com.lattae.theweather.domain.usecase.SaveLocationUseCase
 import com.lattae.theweather.domain.usecase.GetCurrentWeatherUseCase
 import com.lattae.theweather.domain.usecase.GetDailyForecastWeatherUseCase
+import com.lattae.theweather.domain.usecase.GetSavedLocationsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
+import okhttp3.Dispatcher
 import java.util.Locale
 import javax.inject.Inject
 import kotlin.coroutines.resume
@@ -37,7 +44,8 @@ class DetailViewModel @Inject constructor(
     private val getCurrentWeatherUseCase: GetCurrentWeatherUseCase,
     private val getDailyForecastWeatherUseCase: GetDailyForecastWeatherUseCase,
     private val getAirPollutionUseCase: GetAirPollutionUseCase,
-    private val saveLocationUseCase: SaveLocationUseCase
+    private val saveLocationUseCase: SaveLocationUseCase,
+    private val getSavedLocationsUseCase: GetSavedLocationsUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(DetailState())
     val uiState: StateFlow<DetailState> = _uiState.asStateFlow()
@@ -47,41 +55,51 @@ class DetailViewModel @Inject constructor(
         loadDetailWeather()
     }
 
-    fun loadDetailWeather(latitude: Double? = null, longitude: Double? = null) {
+    fun loadDetailWeather(
+        latitude: Double? = null,
+        longitude: Double? = null,
+        isCurrentLoc: Boolean? = null) {
         viewModelScope.launch {
+            val isCurrentLocation = isCurrentLoc ?: (latitude == null && longitude == null)
+
             _uiState.update { it.copy(
                 detailState = Resource.Loading,
-                isCurrentLocation = latitude == null && longitude == null
+                isCurrentLocation = isCurrentLocation
             ) }
 
-            val lat: Double
-            val lon: Double
-
-            if (latitude != null && longitude != null) {
-                lat = latitude
-                lon = longitude
+            val (lat, lon) = if (latitude != null && longitude != null) {
+                latitude to longitude
             } else {
                 val location = locationManager.getCurrentLocation() ?: run {
                     _uiState.update { it.copy(detailState = Resource.Failure("Failed to load location")) }
                     return@launch
                 }
-                lat = location.latitude
-                lon = location.longitude
+                location.latitude to location.longitude
             }
 
             coroutineScope {
+                val savedLocation = async {
+                    val result = getSavedLocationsUseCase()
+                        .filter { it !is Resource.Loading }
+                        .firstOrNull()
+
+                    if (result is Resource.Success) {
+                        result.data.any { (location, _) ->
+                            location.lat == lat && location.lon == lon
+                        }
+                    } else false
+                }
                 val currentWeather = async {
                     getCurrentWeatherUseCase(lat, lon)
                 }
-
                 val dailyForecastWeather = async {
                     getDailyForecastWeatherUseCase(lat, lon)
                 }
-
                 val airPollution = async {
                     getAirPollutionUseCase(lat, lon)
                 }
 
+                val isSavedLocation = savedLocation.await()
                 val currentWeatherResult = currentWeather.await()
                 val dailyForecastWeatherResult = dailyForecastWeather.await()
                 val airPollutionResult = airPollution.await()
@@ -89,45 +107,54 @@ class DetailViewModel @Inject constructor(
                 if (currentWeatherResult is Resource.Success &&
                     dailyForecastWeatherResult is Resource.Success &&
                     airPollutionResult is Resource.Success
-                    ) {
-                        val geocoder = Geocoder(context, Locale.getDefault())
-                        val address = try {
+                ) {
+                    val address = withContext(Dispatchers.IO) {
+                        try {
+                            val geocoder = Geocoder(context, Locale.getDefault())
                             getLocationAddress(geocoder, lat, lon)
                         } catch (e: Exception) {
                             null
                         }
+                    }
 
-                        val locationAddress = if (_uiState.value.isCurrentLocation) {
-                            address?.let {
-                                it.subLocality ?:
-                                it.locality ?:
-                                it.adminArea ?:
-                                it.countryName
-                            } ?: currentWeatherResult.data.locationName
-                        } else {
-                            address.let {
-                                it?.locality ?:
-                                it?.adminArea
-                            } ?: currentWeatherResult.data.locationName
-                        }
+                    val locationAddress = if (_uiState.value.isCurrentLocation) {
+                        address?.let {
+                            it.subLocality ?: it.locality ?: it.adminArea ?: it.countryName
+                        } ?: currentWeatherResult.data.locationName
+                    } else {
+                        address?.let {
+                            it.locality ?: it.adminArea
+                        } ?: currentWeatherResult.data.locationName
+                    }
 
-                        val weather = Weather(
-                            currentWeatherResult.data,
-                            dailyForecastWeatherResult.data,
-                            airPollutionResult.data
-                        ).toWeather()
-                            .copy(
-                                weatherCurrent = currentWeatherResult.data.copy(
-                                    locationName = locationAddress
-                                )
+                    val weather = Weather(
+                        currentWeatherResult.data,
+                        dailyForecastWeatherResult.data,
+                        airPollutionResult.data
+                    ).toWeather()
+                        .copy(
+                            weatherCurrent = currentWeatherResult.data.copy(
+                                locationName = locationAddress
                             )
-                    _uiState.update { it.copy(detailState = Resource.Success(weather)) }
+                        )
+
+                    val currentLoc = (weather.weatherCurrent?.lat == lat && weather.weatherCurrent.lon == lon)
+                    _uiState.update {
+                        it.copy(
+                            detailState = Resource.Success(weather),
+                            isSavedLocation = isSavedLocation
+                        )
+                    }
                 } else {
                     val error = (currentWeatherResult as? Resource.Failure)?.error
                         ?: (dailyForecastWeatherResult as? Resource.Failure)?.error
                         ?: (airPollutionResult as? Resource.Failure)?.error
 
-                    _uiState.update { it.copy(detailState = Resource.Failure(error.toString())) }
+                    _uiState.update {
+                        it.copy(
+                            detailState = Resource.Failure(error.toString())
+                        )
+                    }
                 }
             }
         }
@@ -146,6 +173,7 @@ class DetailViewModel @Inject constructor(
                     state = null
                 )
                 saveLocationUseCase(location)
+                _uiState.update { it.copy(isSavedLocation = true) }
             }
         }
     }

@@ -6,6 +6,7 @@ import com.lattae.theweather.domain.model.AirPollution
 import com.lattae.theweather.domain.model.Location
 import com.lattae.theweather.domain.model.WeatherCurrent
 import com.lattae.theweather.domain.model.WeatherDaily
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -55,7 +56,8 @@ class GetSavedLocationsUseCase @Inject constructor(
                 return@collect
             }
             emit(Resource.Loading)
-            try {
+
+            val result = try {
                 coroutineScope {
                     val currentWeather = locations.map { location ->
                         async {
@@ -65,11 +67,13 @@ class GetSavedLocationsUseCase @Inject constructor(
                             } else null
                         }
                     }.awaitAll().filterNotNull()
-                    emit(Resource.Success(currentWeather))
+                    Resource.Success(currentWeather)
                 }
             } catch (e: Exception) {
-                emit(Resource.Failure(e.message ?: "Unknown error."))
+                if (e is CancellationException) throw e
+                Resource.Failure(e.message ?: "Unknown error.")
             }
+            emit(result)
         }
     }
 }

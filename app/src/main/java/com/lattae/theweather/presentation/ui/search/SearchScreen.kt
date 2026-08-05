@@ -65,7 +65,7 @@ fun SearchScreen(
     currentLocation: WeatherCurrent,
     theme: Brush,
     onNavigateBack: () -> Unit,
-    onNavigateToDetail: (Double, Double) -> Unit
+    onNavigateToDetail: (Double, Double, Boolean) -> Unit
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     var isSearchActive by rememberSaveable { mutableStateOf(false) }
@@ -144,7 +144,7 @@ fun SearchScreen(
                         onItemClick = { location ->
                             onEvent(SearchEvent.OnLocationClick(location))
                             isSearchActive = false
-                            onNavigateToDetail(location.lat, location.lon)
+                            onNavigateToDetail(location.lat, location.lon, false)
                         }
                     )
 
@@ -163,7 +163,7 @@ fun SearchScreen(
                                     location = currentLocation,
                                     isCurrentLocation = true,
                                     onItemClick = { location ->
-                                        onNavigateToDetail(location.lat, location.lon)
+                                        onNavigateToDetail(location.lat, location.lon, true)
                                     },
                                     onDeleteLocation = {}
                                 )
@@ -181,7 +181,7 @@ fun SearchScreen(
                                     location = weather,
                                     isCurrentLocation = false,
                                     onItemClick = { location ->
-                                        onNavigateToDetail(location.lat, location.lon)
+                                        onNavigateToDetail(location.lat, location.lon, false)
                                     },
                                     onDeleteLocation = {
                                         onEvent(SearchEvent.OnDeleteLocation(domainLocation.lat, domainLocation.lon))

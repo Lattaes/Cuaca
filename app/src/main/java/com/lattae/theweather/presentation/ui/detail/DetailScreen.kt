@@ -100,7 +100,8 @@ fun DetailScreen(
             }
             is Resource.Success -> {
                 val weatherData = weatherState.data
-                val detailEvent = if (uiState.isCurrentLocation) {
+                val showDefaultHeader = uiState.isCurrentLocation || uiState.isSavedLocation
+                val detailEvent = if (showDefaultHeader) {
                     DetailEvent.HeaderDefault(
                         onMenuClick = onNavigateToSearchScreen
                     )
@@ -140,11 +141,14 @@ fun DetailScreen(
                 }
             }
             is Resource.Failure -> {
-                Toast.makeText(
-                    LocalContext.current,
-                    weatherState.errorMessage,
-                    Toast.LENGTH_SHORT
-                ).show()
+                val context = LocalContext.current
+                LaunchedEffect(weatherState.errorMessage) {
+                    Toast.makeText(
+                        context,
+                        weatherState.errorMessage,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
             }
         }
     }

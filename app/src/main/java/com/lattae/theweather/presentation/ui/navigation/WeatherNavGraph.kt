@@ -59,8 +59,8 @@ fun WeatherNavGraph(
                 currentLocation = currentLocation,
                 theme = theme,
                 onNavigateBack = { navController.popBackStack() },
-                onNavigateToDetail = { lat, lon ->
-                    detailViewModel.loadDetailWeather(lat, lon)
+                onNavigateToDetail = { lat, lon, isCurrentLoc ->
+                    detailViewModel.loadDetailWeather(lat, lon, isCurrentLoc)
                     navController.popBackStack()
                 }
             )
