@@ -5,18 +5,28 @@ import com.lattae.theweather.domain.model.Weather
 import com.lattae.theweather.domain.model.WeatherCurrent
 import com.lattae.theweather.domain.model.WeatherDaily
 import com.lattae.theweather.util.AqiLevel
+import com.lattae.theweather.util.toFullDate
+import com.lattae.theweather.util.toTimeString
 import com.lattae.weatherapp.data.remote.dto.AirPollutionResponse
 import com.lattae.weatherapp.data.remote.dto.WeatherCurrentResponse
 import com.lattae.weatherapp.data.remote.dto.WeatherDailyResponse
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneOffset
 import kotlin.math.abs
 
 fun WeatherCurrentResponse.toWeatherCurrent(): WeatherCurrent {
+
     return WeatherCurrent(
         locationName = this.name,
+        country = this.sys.country,
         lat = this.coord.lat,
         lon = this.coord.lon,
-        datetime = LocalDate.now(),
+        weatherId = this.weather.firstOrNull()?.id ?: 0,
+        datetime = this.dt.toString(),
+        sunrise = this.sys.sunrise.toString(),
+        sunset = this.sys.sunset.toString(),
+        timezone = this.timezone.toString(),
         weatherType = this.weather.firstOrNull()?.main,
         icon = this.weather.firstOrNull()?.icon,
         temp = this.main.temp.toInt(),
@@ -43,11 +53,15 @@ fun AirPollutionResponse.toAirPollution(): AirPollution {
 }
 
 fun WeatherDailyResponse.toWeatherDaily(): List<WeatherDaily> {
-    val today = LocalDate.now().toString()
+    val timezoneOffset = this.city.timezone
+    val todayAtLocation = Instant.now()
+        .atZone(ZoneOffset.ofTotalSeconds(timezoneOffset))
+        .toLocalDate()
+        .toString()
 
     return this.listWeatherDaily
-        .groupBy { it.dtTxt.substring(0, 10) }
-        .filter { it.key != today }
+        .groupBy { it.dtTxt.take(10) }
+        .filter { it.key > todayAtLocation }
         .entries
         .take(5)
         .map { (dateString, items) ->

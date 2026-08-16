@@ -8,11 +8,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -28,11 +32,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.lattae.theweather.R
 import com.lattae.theweather.domain.model.Location
@@ -50,9 +57,12 @@ fun CustomSearchBar(
     searchResult: List<Location>,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
+    onClearQuery: () -> Unit,
     expandedColor: Brush,
     modifier: Modifier = Modifier
 ) {
+    val focusManager = LocalFocusManager.current
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -80,8 +90,8 @@ fun CustomSearchBar(
                     query = query,
                     onQueryChange = onQueryChange,
                     onSearch = {
-                        onSearch(query)
-                        onExpandedChange(false)
+                        onSearch(it)
+                        focusManager.clearFocus()
                     },
                     expanded = expanded,
                     onExpandedChange = onExpandedChange,
@@ -102,10 +112,21 @@ fun CustomSearchBar(
                             }
                         } else {
                             Icon(
-                                imageVector = Icons.Filled.Search,
+                                imageVector = Icons.Rounded.Search,
                                 contentDescription = stringResource(R.string.search_location),
                                 tint = WeatherTextSecondary
                             )
+                        }
+                    },
+                    trailingIcon = {
+                        if (query.isNotEmpty()) {
+                            IconButton(onClick = { onClearQuery() }) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Close,
+                                    contentDescription = stringResource(R.string.ic_close),
+                                    tint = WeatherTextSecondary
+                                )
+                            }
                         }
                     },
                     colors = SearchBarDefaults.inputFieldColors(
@@ -113,11 +134,11 @@ fun CustomSearchBar(
                         unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(0.2f),
                         focusedTextColor = WeatherTextPrimary,
                         unfocusedTextColor = WeatherTextPrimary
-                    )
+                    ),
                 )
             },
             expanded = expanded,
-            onExpandedChange = onExpandedChange
+            onExpandedChange = onExpandedChange,
         ){
             LazyColumn(
                 modifier = Modifier.fillMaxWidth()

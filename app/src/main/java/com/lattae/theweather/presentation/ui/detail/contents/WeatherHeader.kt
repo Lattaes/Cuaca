@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -25,6 +26,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.lattae.theweather.R
 import com.lattae.theweather.presentation.theme.WeatherTextSecondary
@@ -117,7 +120,8 @@ fun HeaderSearchResultContent(
         )
         LocationTitle(
             location = location,
-            textStyle = MaterialTheme.typography.headlineSmall
+            textStyle = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.weight(1f)
         )
         Button(
             onClick = onAddClick,
@@ -142,7 +146,7 @@ fun LocationTitle(
 ) {
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
@@ -154,7 +158,9 @@ fun LocationTitle(
         Text(
             text = location,
             style = textStyle,
-            color = WeatherTextSecondary
+            color = WeatherTextSecondary,
+            overflow = TextOverflow.Ellipsis,
+            maxLines = 1
         )
     }
 }

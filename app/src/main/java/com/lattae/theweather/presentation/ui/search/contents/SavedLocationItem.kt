@@ -1,16 +1,17 @@
 package com.lattae.theweather.presentation.ui.search.contents
 
-import android.graphics.pdf.models.ListItem
-import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material3.HorizontalDivider
@@ -23,19 +24,22 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.lattae.theweather.R
-import com.lattae.theweather.domain.model.Location
 import com.lattae.theweather.domain.model.WeatherCurrent
 import com.lattae.theweather.presentation.components.WeatherInfo
 import com.lattae.theweather.presentation.theme.WeatherDivider
-import com.lattae.theweather.presentation.theme.WeatherTextSecondary
+import kotlinx.coroutines.delay
 
 @Composable
 fun SavedLocationItem(
@@ -46,29 +50,51 @@ fun SavedLocationItem(
     modifier: Modifier = Modifier
 ) {
 
-    val swipeToDeleteState = rememberSwipeToDismissBoxState()
+    var isDismissed by remember { mutableStateOf(false) }
+    val swipeToDismissBoxState = rememberSwipeToDismissBoxState()
 
-    LaunchedEffect(swipeToDeleteState.currentValue) {
-        if (swipeToDeleteState.currentValue == SwipeToDismissBoxValue.EndToStart) {
+    LaunchedEffect(swipeToDismissBoxState.currentValue) {
+        if (swipeToDismissBoxState.currentValue == SwipeToDismissBoxValue.EndToStart) {
+            isDismissed = true
+            delay(300)
             onDeleteLocation(location)
         }
     }
 
-    Box(modifier = modifier.animateContentSize()) {
+    AnimatedVisibility(
+        visible = !isDismissed,
+        enter = expandVertically() + fadeIn(),
+        exit = shrinkVertically(animationSpec = tween(300)) +
+                fadeOut(animationSpec = tween(300)),
+        modifier = modifier
+    ) {
         SwipeToDismissBox(
-            state = swipeToDeleteState,
-            enableDismissFromEndToStart = !isCurrentLocation,
+            state = swipeToDismissBoxState,
             enableDismissFromStartToEnd = false,
+            enableDismissFromEndToStart = !isCurrentLocation,
+            modifier = Modifier.fillMaxSize(),
             backgroundContent = {
-                val isSwiping = swipeToDeleteState.targetValue == SwipeToDismissBoxValue.EndToStart
-                BackgroundSwipeContainer(
-                    containerColor = if (isSwiping) MaterialTheme.colorScheme.error else Color.Transparent,
-                    iconColor = if (isSwiping) MaterialTheme.colorScheme.onError else Color.Transparent
-                )
+                when (swipeToDismissBoxState.dismissDirection) {
+                    SwipeToDismissBoxValue.StartToEnd -> {}
+                    SwipeToDismissBoxValue.EndToStart -> {
+                        Icon(
+                            imageVector = Icons.Rounded.Delete,
+                            contentDescription = stringResource(R.string.ic_delete),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    lerp(Color.LightGray, MaterialTheme.colorScheme.error, swipeToDismissBoxState.progress)
+                                )
+                                .wrapContentSize(Alignment.CenterEnd)
+                                .padding(12.dp),
+                            tint = MaterialTheme.colorScheme.onError
+                        )
+                    }
+                    SwipeToDismissBoxValue.Settled -> {}
+                }
             }
         ) {
-
-            Column {
+            Column{
                 ListItem(
                     colors = ListItemDefaults.colors(
                         containerColor = Color.Transparent
@@ -97,25 +123,3 @@ fun SavedLocationItem(
         }
     }
 }
-
-@Composable
-fun BackgroundSwipeContainer(
-    containerColor: Color,
-    iconColor: Color
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(containerColor)
-            .padding(end = 20.dp)
-            .clip(RoundedCornerShape(12.dp)),
-        contentAlignment = Alignment.CenterEnd
-    ) {
-        Icon(
-            imageVector = Icons.Rounded.Delete,
-            contentDescription = stringResource(R.string.ic_delete),
-            tint = iconColor
-        )
-    }
-}
-

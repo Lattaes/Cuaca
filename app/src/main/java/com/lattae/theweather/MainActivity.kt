@@ -21,12 +21,20 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.lattae.theweather.common.Resource
 import com.lattae.theweather.presentation.theme.TheWeatherTheme
 import com.lattae.theweather.presentation.ui.detail.viewmodel.DetailViewModel
 import com.lattae.theweather.presentation.ui.navigation.WeatherNavGraph
+import com.lattae.theweather.util.CHANNEL_ID
 import com.lattae.theweather.util.WeatherType
+import com.lattae.theweather.workers.WeatherWorker
 import dagger.hilt.android.AndroidEntryPoint
+import java.util.concurrent.TimeUnit
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -34,6 +42,17 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
+        val weatherWorkRequest = PeriodicWorkRequestBuilder<WeatherWorker>(1, TimeUnit.HOURS)
+            .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
+            .build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            CHANNEL_ID,
+            ExistingPeriodicWorkPolicy.UPDATE,
+            weatherWorkRequest
+        )
+
         setContent {
             val windowSize = calculateWindowSizeClass(this)
             val viewModel: DetailViewModel = hiltViewModel()
@@ -41,7 +60,7 @@ class MainActivity : ComponentActivity() {
 
             val weatherTheme = when (val state = uiState.detailState) {
                 is Resource.Success -> {
-                    val weather = state.data.weatherCurrent?.weatherType.toString()
+                    val weather = state.data.weatherCurrent?.weatherId ?: 0
                     WeatherType.from(weather)
                 }
                 else -> {

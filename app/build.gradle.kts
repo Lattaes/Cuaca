@@ -100,6 +100,11 @@ dependencies {
     // Dagger-Hilt
     implementation(libs.bundles.dagger.hilt)
     ksp(libs.dagger.hilt.compiler)
+    implementation(libs.errorprone.annotations)
+
+    // Work Manager
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
 
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

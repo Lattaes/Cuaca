@@ -27,6 +27,7 @@ import androidx.compose.material3.windowsizeclass.WindowWidthSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
@@ -44,6 +45,7 @@ import com.lattae.theweather.presentation.ui.detail.contents.WeatherCondition
 import com.lattae.theweather.presentation.ui.detail.contents.WeatherCurrentContent
 import com.lattae.theweather.presentation.ui.detail.contents.WeatherDailyContent
 import com.lattae.theweather.presentation.ui.detail.contents.WeatherHeader
+import com.lattae.theweather.presentation.ui.detail.contents.WeatherSunSlider
 import com.lattae.theweather.presentation.ui.detail.viewmodel.DetailEvent
 import com.lattae.theweather.presentation.ui.detail.viewmodel.DetailViewModel
 import com.lattae.theweather.presentation.ui.navigation.NavigationDestination
@@ -117,12 +119,16 @@ fun DetailScreen(
                         WeatherDetailPortrait(
                             weather = weatherData,
                             detailEvent = detailEvent,
+                            sliderProgress = uiState.sunProgress,
+                            isNightMode = uiState.isNightMode
                         )
                     }
                     WindowWidthSizeClass.Medium -> {
                         WeatherDetailPortrait(
                             weather = weatherData,
                             detailEvent = detailEvent,
+                            sliderProgress = uiState.sunProgress,
+                            isNightMode = uiState.isNightMode
                         )
                     }
 
@@ -130,12 +136,16 @@ fun DetailScreen(
                         WeatherDetailLandscape(
                             weather = weatherData,
                             detailEvent = detailEvent,
+                            sliderProgress = uiState.sunProgress,
+                            isNightMode = uiState.isNightMode
                         )
                     }
                     else -> {
                         WeatherDetailPortrait(
                             weather = weatherData,
-                            detailEvent = detailEvent
+                            detailEvent = detailEvent,
+                            sliderProgress = uiState.sunProgress,
+                            isNightMode = uiState.isNightMode
                         )
                     }
                 }
@@ -158,6 +168,8 @@ fun DetailScreen(
 fun WeatherDetailPortrait(
     weather: Weather,
     detailEvent: DetailEvent,
+    sliderProgress: Float,
+    isNightMode: Boolean,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -191,6 +203,13 @@ fun WeatherDetailPortrait(
                     weatherCurrent = weather.weatherCurrent ?: WeatherCurrent()
                 )
             }
+            item {
+                WeatherSunSlider(
+                    weatherCurrent = weather.weatherCurrent ?: WeatherCurrent(),
+                    sliderProgress = sliderProgress,
+                    isNightMode = isNightMode
+                )
+            }
         }
     }
 }
@@ -199,6 +218,8 @@ fun WeatherDetailPortrait(
 fun WeatherDetailLandscape(
     weather: Weather,
     detailEvent: DetailEvent,
+    sliderProgress: Float,
+    isNightMode: Boolean,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -224,15 +245,24 @@ fun WeatherDetailLandscape(
                 modifier = Modifier
                     .wrapContentSize()
                     .height(IntrinsicSize.Max),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                WeatherDailyContent(
-                    weatherDaily = weather.weatherDaily ?: emptyList(),
+                Column(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxHeight()
-                )
+                        .fillMaxHeight(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    WeatherDailyContent(
+                        weatherDaily = weather.weatherDaily ?: emptyList()
+                    )
+                    WeatherSunSlider(
+                        weatherCurrent = weather.weatherCurrent ?: WeatherCurrent(),
+                        sliderProgress = sliderProgress,
+                        isNightMode = isNightMode
+                    )
+                }
                 WeatherCondition(
                     weatherCurrent = weather.weatherCurrent ?: WeatherCurrent(),
                     modifier = Modifier

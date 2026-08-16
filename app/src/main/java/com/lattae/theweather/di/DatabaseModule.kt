@@ -22,7 +22,8 @@ object DatabaseModule {
             context,
             WeatherDatabase::class.java,
             "weather_db"
-        ).build()
+        ).fallbackToDestructiveMigration(dropAllTables = true)
+            .build()
     }
 
     @Provides

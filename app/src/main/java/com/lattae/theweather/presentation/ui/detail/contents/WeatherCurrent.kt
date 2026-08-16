@@ -34,7 +34,7 @@ fun WeatherCurrentContent(
     ) {
         Column {
             Text(
-                text = weatherCurrent.datetime.toFullDate(),
+                text = "${weatherCurrent.datetime}",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium,
                 color = WeatherTextSecondary

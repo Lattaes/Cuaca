@@ -9,5 +9,7 @@ data class DetailState (
     val detailState: Resource<Weather> = Resource.Loading,
     val currentLocationWeather: Resource<WeatherCurrent> = Resource.Loading,
     val isCurrentLocation: Boolean = true,
-    val isSavedLocation: Boolean = false
+    val isSavedLocation: Boolean = false,
+    val sunProgress: Float = 0f,
+    val isNightMode: Boolean = false
 )

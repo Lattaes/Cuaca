@@ -24,8 +24,7 @@ fun List<LocationEntity>.toLocation(): List<Location> {
             locationName = it.name,
             lat = it.lat,
             lon = it.lon,
-            country = it.country,
-            state = it.state
+            country = it.country
         )
     }
 }
@@ -33,9 +32,8 @@ fun List<LocationEntity>.toLocation(): List<Location> {
 fun Location.toEntity(): LocationEntity {
     return LocationEntity(
         name = locationName ?: "",
-        lat = lat,
-        lon = lon,
+        lat = Math.round(lat * 100.0) / 100.0,
+        lon = Math.round(lon * 100.0) / 100.0,
         country = country ?: "",
-        state = state ?: ""
     )
 }

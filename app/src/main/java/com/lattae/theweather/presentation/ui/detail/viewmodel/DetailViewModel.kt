@@ -1,7 +1,5 @@
 package com.lattae.theweather.presentation.ui.detail.viewmodel
 
-import android.R
-import android.content.Context
 import android.location.Address
 import android.location.Geocoder
 import android.os.Build
@@ -18,8 +16,9 @@ import com.lattae.theweather.domain.usecase.SaveLocationUseCase
 import com.lattae.theweather.domain.usecase.GetCurrentWeatherUseCase
 import com.lattae.theweather.domain.usecase.GetDailyForecastWeatherUseCase
 import com.lattae.theweather.domain.usecase.GetSavedLocationsUseCase
+import com.lattae.theweather.util.toFullDate
+import com.lattae.theweather.util.toTimeString
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -27,22 +26,18 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import okhttp3.Dispatcher
-import java.util.Locale
 import javax.inject.Inject
 import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import kotlin.math.abs
 
 @HiltViewModel
 class DetailViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+    private val geocoder: Geocoder,
     private val locationManager: ILocationManager,
     private val getCurrentWeatherUseCase: GetCurrentWeatherUseCase,
     private val getDailyForecastWeatherUseCase: GetDailyForecastWeatherUseCase,
@@ -87,10 +82,10 @@ class DetailViewModel @Inject constructor(
                         .firstOrNull()
 
                     if (result is Resource.Success) {
-                        result.data.any { (location, _) ->
-                            val threshold = 0.0001
-                            abs(location.lat - lat) < threshold &&
-                            abs(location.lon - lon) < threshold
+                        result.data.any { weather ->
+                            val threshold = 0.02
+                            abs(weather.lat - lat) < threshold &&
+                            abs(weather.lon - lon) < threshold
                         }
                     } else false
                 }
@@ -116,8 +111,7 @@ class DetailViewModel @Inject constructor(
                 ) {
                     val address = withContext(Dispatchers.IO) {
                         try {
-                            val geocoder = Geocoder(context, Locale.getDefault())
-                            getLocationAddress(geocoder, lat, lon)
+                            getLocationAddress(lat, lon)
                         } catch (e: Exception) {
                             null
                         }
@@ -128,10 +122,14 @@ class DetailViewModel @Inject constructor(
                             it.subLocality ?: it.locality ?: it.adminArea ?: it.countryName
                         } ?: currentWeatherResult.data.locationName
                     } else {
-                        address?.let {
-                            it.locality ?: it.adminArea
-                        } ?: currentWeatherResult.data.locationName
+                        currentWeatherResult.data.locationName
                     }
+
+                    val timezone = currentWeatherResult.data.timezone
+                    val fullDate = toFullDate(currentWeatherResult.data.datetime, timezone)
+
+                    val sunrise = toTimeString(currentWeatherResult.data.sunrise, timezone)
+                    val sunset = toTimeString(currentWeatherResult.data.sunset, timezone)
 
                     val weather = Weather(
                         currentWeatherResult.data,
@@ -140,7 +138,10 @@ class DetailViewModel @Inject constructor(
                     ).toWeather()
                         .copy(
                             weatherCurrent = currentWeatherResult.data.copy(
-                                locationName = locationAddress
+                                locationName = locationAddress,
+                                datetime = fullDate,
+                                sunrise = sunrise,
+                                sunset = sunset
                             )
                         )
 
@@ -148,21 +149,29 @@ class DetailViewModel @Inject constructor(
                         val updatedCurrentWeather = if (isCurrentLocation) {
                             Resource.Success(
                                 currentWeatherResult.data.copy(
-                                    locationName = locationAddress
+                                    locationName = locationAddress,
                                 )
                             )
                         } else {
                             it.currentLocationWeather
                         }
+
+                        val (sunProgress, isNightMode) = calculateSunProgress(
+                            currentWeatherResult.data.sunrise ?: "",
+                            currentWeatherResult.data.sunset ?: ""
+                        )
+
                         it.copy(
                             detailState = Resource.Success(weather),
                             currentLocationWeather = updatedCurrentWeather,
                             isCurrentLocation = isCurrentLocation,
-                            isSavedLocation = isSavedLocation
+                            isSavedLocation = isSavedLocation,
+                            sunProgress = sunProgress,
+                            isNightMode = isNightMode
                         )
                     }
-                    Log.d("Current Location:", isCurrentLocation.toString())
-                    Log.d("Saved Location:", isSavedLocation.toString())
+
+                    Log.d("Current location:", "$currentWeatherResult")
                 } else {
                     val error = (currentWeatherResult as? Resource.Failure)?.error
                         ?: (dailyForecastWeatherResult as? Resource.Failure)?.error
@@ -187,8 +196,7 @@ class DetailViewModel @Inject constructor(
                     locationName = weather.weatherCurrent?.locationName,
                     lat = weather.weatherCurrent?.lat ?: 0.0,
                     lon = weather.weatherCurrent?.lon ?: 0.0,
-                    country = null,
-                    state = null
+                    country = weather.weatherCurrent?.country,
                 )
                 saveLocationUseCase(location)
                 _uiState.update { it.copy(isSavedLocation = true) }
@@ -196,8 +204,40 @@ class DetailViewModel @Inject constructor(
         }
     }
 
+    private fun calculateSunProgress(
+        sunrise: String,
+        sunset: String
+    ): Pair<Float, Boolean> {
+        val sunriseEpoch = sunrise.toFloatOrNull() ?: return Pair(0f, false)
+        val sunsetEpoch = sunset.toFloatOrNull() ?: return Pair(0f, false)
+        val currentEpoch = (System.currentTimeMillis()/1000).toFloat()
+
+        return when {
+            currentEpoch in sunriseEpoch..sunsetEpoch -> {
+                val total = (sunsetEpoch - sunriseEpoch)
+                val elapsed = (currentEpoch - sunriseEpoch)
+                val progress = if (total > 0f) (elapsed/total).coerceIn(0f, 1f) else 0f
+                Pair(progress, false)
+            }
+            currentEpoch > sunsetEpoch -> {
+                val nextSunriseEpoch = (sunriseEpoch + 86400)
+                val total = (nextSunriseEpoch - sunsetEpoch)
+                val elapsed = (currentEpoch - sunsetEpoch)
+                val progress = if (total > 0f) (elapsed/total).coerceIn(0f, 1f) else 0f
+                Pair(progress, true)
+            }
+            else -> {
+                val prevSunsetEpoch = (sunsetEpoch - 86400)
+                val total = (sunriseEpoch - prevSunsetEpoch)
+                val elapsed = (currentEpoch - prevSunsetEpoch)
+                val progress = if (total > 0) (elapsed/total).coerceIn(0f, 1f) else 0f
+                Pair(progress, true)
+            }
+        }
+    }
+
     @Suppress("DEPRECATION")
-    private suspend fun getLocationAddress(geocoder: Geocoder, lat: Double, lon: Double): Address? {
+    private suspend fun getLocationAddress(lat: Double, lon: Double): Address? {
         return suspendCancellableCoroutine { continuation ->
             try {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

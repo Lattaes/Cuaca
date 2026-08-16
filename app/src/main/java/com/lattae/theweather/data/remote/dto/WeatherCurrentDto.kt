@@ -12,6 +12,7 @@ data class WeatherCurrentResponse(
     @SerializedName("clouds") val clouds: Clouds,
     @SerializedName("dt") val dt: Long,
     @SerializedName("sys") val sys: Sys,
+    @SerializedName("timezone") val timezone: Int,
     @SerializedName("name") val name: String
 )
 

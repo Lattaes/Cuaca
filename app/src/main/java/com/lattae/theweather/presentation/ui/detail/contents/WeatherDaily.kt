@@ -46,7 +46,8 @@ fun WeatherDailyContent(
                 tempMax = "${day.tempMax}",
                 fontStyle = MaterialTheme.typography.bodyMedium,
                 isCurrentLocation = false,
-                modifier = Modifier.padding(vertical = 2.dp)
+                modifier = Modifier
+                    .padding(vertical = 2.dp)
             )
             if (index < weatherDaily.size -1) {
                 HorizontalDivider(

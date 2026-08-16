@@ -140,6 +140,7 @@ fun SearchScreen(
                         searchResult = searchResult,
                         expanded = isSearchActive,
                         onExpandedChange = { isSearchActive = it },
+                        onClearQuery = { onEvent(SearchEvent.OnClearQuery) },
                         expandedColor = theme,
                         onItemClick = { location ->
                             onEvent(SearchEvent.OnLocationClick(location))
@@ -157,7 +158,7 @@ fun SearchScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             item (
-                                key = "current_location_${currentLocation.locationName}"
+                                key = "current_location_${currentLocation.lat}_${currentLocation.lon}"
                             ){
                                 SavedLocationItem(
                                     location = currentLocation,
@@ -171,20 +172,18 @@ fun SearchScreen(
 
                             items(
                                 items = savedLocations.data,
-                                key = { pair ->
-                                    pair.first.locationName ?: "${pair.first.lat}${pair.first.lon}"
+                                key = { weather ->
+                                    "${weather.locationName}_${weather.lat}_${weather.lon}"
                                 }
-                            ) { pair ->
-                                val domainLocation = pair.first
-                                val weather = pair.second
+                            ) { weather ->
                                 SavedLocationItem(
                                     location = weather,
                                     isCurrentLocation = false,
                                     onItemClick = { location ->
                                         onNavigateToDetail(location.lat, location.lon, false)
                                     },
-                                    onDeleteLocation = {
-                                        onEvent(SearchEvent.OnDeleteLocation(domainLocation.lat, domainLocation.lon))
+                                    onDeleteLocation = { location ->
+                                        onEvent(SearchEvent.OnDeleteLocation(location.lat, location.lon))
                                     }
                                 )
                             }
@@ -202,21 +201,3 @@ fun SearchScreen(
         }
     }
 }
-
-
-//@Preview (showBackground = true, showSystemUi = true, device = PIXEL_7)
-//@Composable
-//fun SearchScreenPreview() {
-//    SearchScreen(
-//        searchState = SearchState(),
-//        onEvent = {},
-//        onNavigateBack = {},
-//        currentLocation = WeatherCurrent(
-//            locationName = "Fuzhou",
-//            icon = "",
-//            tempMin = 25,
-//            tempMax = 28
-//        ),
-//        theme = Brush.verticalGradient()
-//    )
-//}

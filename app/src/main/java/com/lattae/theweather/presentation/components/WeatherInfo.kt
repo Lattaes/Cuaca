@@ -22,6 +22,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.lattae.theweather.R
 import com.lattae.theweather.presentation.theme.WeatherCardBg
@@ -62,6 +63,8 @@ fun WeatherInfo(
                 color = WeatherTextSecondary,
                 style = fontStyle,
                 fontWeight = fontWeight,
+                overflow = TextOverflow.Ellipsis,
+                maxLines = 2,
                 modifier = Modifier.weight(1f)
             )
         }

@@ -110,7 +110,7 @@ fun CardWeatherCondition(
         modifier = modifier
     ) {
         Column(
-            modifier = Modifier.padding(8.dp, 12.dp)
+            modifier = Modifier.padding(12.dp, 12.dp)
         ) {
             Icon(
                 imageVector = icon,

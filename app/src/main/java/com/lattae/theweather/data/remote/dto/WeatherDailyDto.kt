@@ -19,5 +19,6 @@ data class WeatherDaily(
 
 data class City(
     @SerializedName("name") val name: String,
-    @SerializedName("country") val country: String
+    @SerializedName("country") val country: String,
+    @SerializedName("timezone") val timezone: Int
 )

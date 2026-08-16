@@ -10,10 +10,9 @@ import com.google.android.gms.tasks.CancellationTokenSource
 import com.lattae.theweather.domain.location.ILocationManager
 import com.lattae.theweather.util.hasPermission
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.coroutines.resume
 
 @Singleton
 class LocationManager @Inject constructor(
@@ -36,22 +35,16 @@ class LocationManager @Inject constructor(
             throw ILocationManager.LocationException("GPS & Network disabled")
         }
 
-        return suspendCancellableCoroutine { coroutine ->
-            val cancellationTokenSource = CancellationTokenSource()
-
+        val cancellationTokenSource = CancellationTokenSource()
+        return try {
             fusedLocationProviderClient.getCurrentLocation(
                 Priority.PRIORITY_HIGH_ACCURACY,
                 cancellationTokenSource.token
-            ).addOnSuccessListener { location ->
-                coroutine.resume(location)
-            }.addOnFailureListener { exception ->
-                coroutine.resume(null)
-            }
-
-            coroutine.invokeOnCancellation {
-                cancellationTokenSource.cancel()
-            }
+            ).await()
+        } catch (e: Exception) {
+            null
+        } finally {
+            cancellationTokenSource.cancel()
         }
     }
-
 }
