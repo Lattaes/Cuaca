@@ -1,0 +1,58 @@
+package com.lattae.cuaca.data.location
+
+import android.annotation.SuppressLint
+import android.content.Context
+import android.location.Location
+import android.location.LocationManager
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
+import com.lattae.cuaca.domain.location.ILocationManager
+import com.lattae.cuaca.util.hasPermission
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.tasks.await
+import javax.inject.Inject
+import javax.inject.Singleton
+
+@Singleton
+class LocationManager @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val fusedLocationProviderClient: FusedLocationProviderClient
+    ): ILocationManager {
+
+    @SuppressLint("MissingPermission")
+    override suspend fun getCurrentLocation(): Location? {
+
+        if (!context.hasPermission()) {
+            throw ILocationManager.LocationException("Missing location permission")
+        }
+
+        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+        val isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+
+        if (!isGpsEnabled && !isNetworkEnabled) {
+            throw ILocationManager.LocationException("GPS & Network disabled")
+        }
+
+        val lastLocation = try {
+            fusedLocationProviderClient.lastLocation.await()
+        } catch (e: Exception) {
+            null
+        }
+
+        if (lastLocation != null) return lastLocation
+
+        val cancellationTokenSource = CancellationTokenSource()
+        return try {
+            fusedLocationProviderClient.getCurrentLocation(
+                Priority.PRIORITY_HIGH_ACCURACY,
+                cancellationTokenSource.token
+            ).await()
+        } catch (e: Exception) {
+            null
+        } finally {
+            cancellationTokenSource.cancel()
+        }
+    }
+}

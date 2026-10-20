@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">TheWeather</string>
+    <string name="app_name">Cuaca</string>
     <string name="feels_like">%1$s° / %2$s° feels like %3$s°</string>
     <string name="air_quality">Air quality: %1$s - %2$s</string>
     <string name="rain">Rain</string>
@@ -26,28 +26,16 @@
     <string name="search_location">Search location</string>
     <string name="weather_detail_title">Weather Detail</string>
     <string name="weather_search_title">Weather Search</string>
+    <string name="update_data">Updating…</string>
 
     <string name="thunderstorm">Thunderstorm</string>
     <string name="drizzle">Drizzle</string>
     <string name="snow">Snow</string>
     <string name="atmosphere">Atmosphere</string>
     <string name="clear">Clear</string>
-    
-    <string name="thunderstorm_title">Thunderstorm Warning</string>
-    <string name="thunderstorm_desc">Stay indoors. There is a thunderstorms potential in your area.</string>
-    
-    <string name="heavy_rain_title">Heavy Rain Warning</string>
-    <string name="heavy_rain_desc">Have a raincoat and umbrella ready. Be alert for potential pooling water.</string>
-    
-    <string name="extreme_atmosphere_title">Extreme Weather Warning</string>
-    <string name="extreme_atmosphere_desc">Beware of extreme weather in your area. Avoid outdoors activity.</string>
 
-    <string name="poor_visibility_title">Visibility Warning</string>
-    <string name="poor_visibility_desc">Low visibility. Be careful while driving</string>
-
-    <string name="snow_title">Snowfall Warning</string>
-    <string name="snow_desc">Watch out for slippery roads because of the snowfall.</string>
-
-    <string name="normal_title">Safe Weather Conditions</string>
-    <string name="normal_desc">Weather conditions are considered safe.</string>
+    <string name="get_location_failed">Failed to gret location</string>
+    <string name="update_weather_failed">Failed to update weather data</string>
+    <string name="save_location_failed">Failed to save location</string>
+    <string name="getting_current_loc_failed">Failed getting current location coordinates</string>
 </resources>
