@@ -1,7 +1,5 @@
 # 🌤️ TheWeather
 
-[![Download APK](https://img.shields.io/badge/Download-APK-brightgreen?style=for-the-badge&logo=android)](app-release.apk) 📱
-
 <img src="app/src/main/res/drawable/poster.png" alt="App Poster" />
 
 Cuaca is an Android application built using Modern Android Development (MAD) practices, Clean Architecture, and Jetpack Compose. The application provides real-time weather forecasts, air quality metrics, and location search capabilities. It uses an offline-first data synchronization strategy with local caching and background worker updates.
