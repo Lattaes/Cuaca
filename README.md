@@ -1,4 +1,4 @@
-# 🌤️ TheWeather
+# 🌤️ Cuaca
 
 <p align="center">
   <img src="app/src/main/res/drawable/poster.png" alt="Project Screenshot" width="300">
@@ -48,7 +48,7 @@ The codebase uses several key architectural techniques:
 ## 📂 Project Structure
 
 ```
-TheWeather/
+Cuaca/
 ├── build.gradle.kts
 ├── gradle.properties
 ├── gradle/
